@@ -42,6 +42,29 @@ router.post('/addTransaction', (req, res) => {
   res.redirect('transactions')
 })
 
+//helper function
+function isValidChain(reschain, chain){
+  let valid = True
+  for (var i = 0; i < chain.length; i++) {if(chain[i].hash != resChain[i].hash || chain[i].prevHash != resChain[i].prevHash) {valid = False;}
+  if(resChain.length > chain.length){
+    for (var i = chain.length; i < resChain.length; i++) {
+      if(reschain[i].prevHash == reschain[i-1].hash)
+    }
+  } else {valid = False;}
+  return valid
+}
+router.get('/sync', (req, res) => {
+  for (var i = 0; i < urls.length; i++) {
+    let resChain = sendRequest(urls[i])
+    if(chain.length < resChain.length && isValidChain(resChain)){
+      chain = resChain
+    }
+
+
+  }
+})
+
+
 router.post('/mine', (req, res) => {
   chain.mineBlock()
   res.redirect('chain')
