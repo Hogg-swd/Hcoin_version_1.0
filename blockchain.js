@@ -2,18 +2,18 @@ var sha256 = require('js-sha256');
 const https = require('https');
 var request = require('request');
 var crypto = require('crypto');
-
-
+var fs = require("fs");
 
 class Transaction {
-  constructor(sender, reciever, amount){
+  constructor(sender, reciever, amount, date = new Date()){
     this.sender = sender;
     this.reciever = reciever;
     this.amount = amount;
+    this.date = date
+    this.sig = ""
   }
-
-  toString(){
-    return {s : this.sender, r : this.reciever, a : this.amount}
+  setSignature(sig) {
+    this.sig = sig
   }
 }
 
@@ -42,7 +42,13 @@ class Block {
   }
 
   mine(diff){
-    while(!(this.hash.substring(3, 1) == "00")){
+    let nounce = ""
+    for (var i = 0; i < diff; i++) {
+      nounce += '0'
+    }
+    console.log(nounce)
+    while(!(this.hash.substring(1, diff+1) == nounce)){
+        console.log(this.hash.substring(1, diff+1))
         this.guess++;
         this.hash = this.createHash();
     }
@@ -52,11 +58,11 @@ class Block {
 
 class BlockChain {
   constructor(){
-    this.publicKey = this.keyGen();
+    this.publicKey = fs.readFileSync('./publicKey.pem', 'utf8')
     this.bc = [this.generateGenBlock()];
     this.transactions = [];
     this.blockNu = 1;
-    this.diff = 2;
+    this.diff = 4;
   }
 
   keyGen(){
@@ -66,7 +72,9 @@ class BlockChain {
   }
 
   generateGenBlock(){
-    return new Block("First Block", "0", 0);
+    let block = new Block([new Transaction("REWARD", this.publicKey, 5000)], "0", 0);
+    block.hash = "GenBlockHash"
+    return block;
   }
 
   getLatestBlock(){
@@ -79,7 +87,7 @@ class BlockChain {
       var block = new Block(this.transactions, this.getLatestBlock().hash, this.blockNu);
       block.mine(this.diff);
       this.transactions = [];
-      this.transactions.push(new Transaction("System", this.publicKey, 10));
+      this.transactions.push(new Transaction("REWARD", this.publicKey, 10));
       this.bc.push(block);
       this.blockNu += 1;
     } catch (err) {
@@ -89,13 +97,13 @@ class BlockChain {
   }
 
   //client side maybe take out of BlockChain class
-  checkBalance(){
+  checkBalance(walletAddress){
     var balance = 0;
     for(var i = 0; i < this.bc.length; i++){
       for(var j = 0; j < this.bc[i].data.length; j++){
-        if(this.bc[i].data[j].reciever == this.publicKey){
+        if(this.bc[i].data[j].reciever == walletAddress){
           balance += this.bc[i].data[j].amount;
-        } else if (this.bc[i].data[j].sender == this.publicKey) {
+        } else if (this.bc[i].data[j].sender == walletAddress) {
           balance -= this.bc[i].data[j].amount;
         }
       }
@@ -104,12 +112,13 @@ class BlockChain {
     return balance;
   }
 
-  addTransaction(reciever, amount){
+  addTransaction(sender, reciever, amount, signature){
     try {
       amount = parseInt(amount)
       var balance = this.checkBalance()
       if(balance >= amount){
-        var transaction = new Transaction(this.publicKey, reciever, amount)
+        var transaction = new Transaction(sender, reciever, amount)
+        transaction.setSignature(signature)
         this.transactions.push(transaction)
       }
     } catch {
@@ -121,17 +130,6 @@ class BlockChain {
       //}
   }
 
-  requestChain(){
-    request("http://localhost:5001/", function (err, res) {
-      if(err) return console.error(err.message);
-      this.bc = res.body;
-    });
-
-  }
-
-   async update(){
-    await this.requestChain();
-  }
 
 }
 

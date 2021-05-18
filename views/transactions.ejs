@@ -39,7 +39,7 @@
   <div class="card-body">
     <h5 class="card-title">Account Information</h5>
     <p class="card-text">PublicKey : <%= JSON.stringify(chain.publicKey) %></p>
-    <p class="card-text">Current Balance : <%= JSON.stringify(JSON.stringify(chain.checkBalance())) %></p>
+    <p class="card-text">Current Balance : <%= JSON.stringify(JSON.stringify(chain.checkBalance(chain.publicKey))) %></p>
   </div>
   <div class="card-footer text-muted">
     2 days ago
@@ -55,6 +55,9 @@
         <p class="card-text"><%= JSON.stringify(chain.transactions) %></p>
         <form action="/mine" method="POST">
            <button type="submit" class="btn btn-primary">Mine</button>
+        </form>
+        <form action="/update" method="POST">
+           <button type="submit" class="btn btn-primary">update serverList</button>
         </form>
       </div>
     </div>
