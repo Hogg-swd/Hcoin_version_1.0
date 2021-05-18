@@ -234,6 +234,7 @@ router.post('/transactionRequest', (req, res) => {
   res.send(packet)
 })
 
+//Mine a block and then send that block to
 router.post('/mine', (req, res) => {
   let filterdTransactions = removeInvalidTransactions(chain.transactions);
   console.log(chain.transactions);
